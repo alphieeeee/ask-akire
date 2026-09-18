@@ -4,22 +4,35 @@ import { Canvas } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useEffect } from "react";
 
-function AkireModel() {
+function AkireModel({ isStreaming }: { isStreaming: boolean }) {
   const { scene, animations } = useGLTF("/akire-idle.glb");
   const { actions } = useAnimations(animations, scene);
 
   useEffect(() => {
-    const idleName = Object.keys(actions).find((name) => name.toLowerCase().includes("idle")) ?? Object.keys(actions)[0];
+    if (!actions) return;
+
+    const actionNames = Object.keys(actions);
+    const idleName =
+      actionNames.find((name) => name.toLowerCase().includes("idle")) ??
+      actionNames[0];
     const idleAction = idleName ? actions[idleName] : undefined;
     if (!idleAction) return;
+
+    if (!isStreaming) {
+      idleAction.stop();
+      return;
+    }
+
     idleAction.reset().fadeIn(0.3).play();
-    return () => { idleAction.fadeOut(0.2); };
-  }, [actions]);
+    return () => {
+      idleAction.fadeOut(0.2);
+    };
+  }, [actions, isStreaming]);
 
   return <primitive object={scene} position={[0, -1.35, 0]} rotation={[0, 0.05, 0]} scale={2.15} dispose={null} />;
 }
 
-export default function AvatarCanvas() {
+export default function AvatarCanvas({ isStreaming }: { isStreaming: boolean }) {
   return (
     <Canvas
       aria-label="Akire 3D avatar"
@@ -33,7 +46,7 @@ export default function AvatarCanvas() {
       <ambientLight intensity={1.7} color="#ceccff" />
       <directionalLight position={[2, 3, 4]} intensity={2.4} color="#ffffff" />
       <pointLight position={[-2, 0.5, 2]} intensity={1.2} color="#7d83ff" />
-      <AkireModel />
+      <AkireModel isStreaming={isStreaming} />
     </Canvas>
   );
 }
